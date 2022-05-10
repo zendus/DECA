@@ -21,7 +21,7 @@ contract DECA {
     }
 
     /// @notice A mapping of buyer address to list of products ordered
-    mapping (address => Product[]) public user_order;
+    mapping (address => Product[]) cart;
 
     /// @notice An array of all available products
     /// @dev It is of type Product struct
@@ -32,6 +32,9 @@ contract DECA {
 
     /// @notice Emitted when a product is registered by a seller
     event LogProductUpload(uint256 productID, uint256 timeUploaded);
+
+    /// @notice Emitted when a product is added to cart by a potential buyer
+    event LogUserCartUpdated(address indexed user, uint256 productID, uint256 timeAdded);
 
     /// @notice Assigns owner role to the contract deployer address
     constructor() {
@@ -49,6 +52,20 @@ contract DECA {
         image_cid: _image_cid, description: _description, seller: payable(msg.sender)}));
         emit LogProductUpload(idCount, block.timestamp);
         idCount++;
+    }
+
+    /// @param productID unique id of product to be added
+    /// @dev since index starts from 0, productID-1 was used to index the products array
+    function addToCart(uint productID) external {
+        cart[msg.sender].push(products[productID-1]);
+        emit LogUserCartUpdated(msg.sender, productID, block.timestamp);
+    }
+
+    // function checkIfProductExists(uint productID) private returns(bool) {}
+
+    /// @notice returns tuple containing user products
+    function viewCart() external view returns(Product[] memory) {
+        return cart[msg.sender];
     }
 
 }
