@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED 
-pragma solidity >=0.5.0 < 0.9.0;
+pragma solidity ^0.8.7;
 
 /// @title A decentralized e-commerce smart contract
 /// @notice This contract depicts the basic functionalities of an e-commerce platform
@@ -23,6 +23,9 @@ contract DECA {
     /// @notice A mapping of buyer address to list of products ordered
     mapping (address => uint[]) cart;
 
+    /// @notice A mapping of buyer address to bool for state of payment
+    mapping (address => bool) paid;
+
     /// @notice An array of all available products
     /// @dev It is of type Product struct
     Product[] public products;
@@ -38,6 +41,9 @@ contract DECA {
 
     /// @notice Emitted when product is purchased
     event LogProductPurchase(address indexed user, uint[] items, uint purchaseTime);
+
+    /// @notice Emitted when buyer confirms product delivery thereby triggering fund transfer
+    event LogProductDelivery(address indexed user, uint[] items, uint deliveryTime);
 
     /// @notice Assigns owner role to the contract deployer address
     constructor() {
@@ -85,6 +91,7 @@ contract DECA {
     /// @notice Adds the ether sent by the buyer to the contract balance
     function purchase() external payable {
         require(msg.value == totalAmountToPay(msg.sender), "Amount not enough");
+        paid[msg.sender] = true;
         emit LogProductPurchase(msg.sender, cart[msg.sender], block.timestamp);
     }
 
@@ -102,6 +109,17 @@ contract DECA {
     /// @return The contract ether balance
     function contractBalance() external view onlyOwner returns(uint) {
         return address(this).balance;
+    }
+
+    /// @notice Transfers ether to individual sellers of products in user cart
+    function confirmDelivery() external {
+        require(paid[msg.sender], "Please make payment !!");
+        for (uint i = 0; i < cart[msg.sender].length; ++i) {
+            products[i].seller.transfer(products[i].price);
+        }
+        delete cart[msg.sender];
+        paid[msg.sender] = false;
+        emit LogProductDelivery(msg.sender, cart[msg.sender], block.timestamp);
     }
 
 }
