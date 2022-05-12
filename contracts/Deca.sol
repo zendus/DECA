@@ -114,11 +114,11 @@ contract DECA {
     /// @notice Transfers ether to individual sellers of products in user cart
     function confirmDelivery() external {
         require(paid[msg.sender], "Please make payment !!");
+        paid[msg.sender] = false;
         for (uint i = 0; i < cart[msg.sender].length; ++i) {
             products[i].seller.transfer(products[i].price);
         }
         delete cart[msg.sender];
-        paid[msg.sender] = false;
         emit LogProductDelivery(msg.sender, cart[msg.sender], block.timestamp);
     }
 
