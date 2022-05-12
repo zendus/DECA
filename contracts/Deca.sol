@@ -37,7 +37,7 @@ contract DECA {
     event LogProductUpload(uint256 productID, uint256 timeUploaded);
 
     /// @notice Emitted when a product is added to cart by a potential buyer
-    event LogUserCartUpdated(address indexed user, uint256 productID, uint256 timeAdded);
+    event LogUserCartUpdated(address indexed user, uint256[] items, uint256 timeAdded);
 
     /// @notice Emitted when product is purchased
     event LogProductPurchase(address indexed user, uint[] items, uint purchaseTime);
@@ -76,16 +76,33 @@ contract DECA {
         idCount++;
     }
 
+    /// @param productIDs list of product IDs to be added
+    /// @dev since index starts from 0, productID-1 was used to index the products array
+    function addMultipleProductsToCart(uint[] memory productIDs) external {
+        for(uint i = 0; i < productIDs.length; ++i) {
+            require(products[productIDs[i]-1].id  != 0, "Product does not exist");
+            cart[msg.sender].push(productIDs[i]);
+        }
+        emit LogUserCartUpdated(msg.sender, productIDs, block.timestamp);
+    }
+
     /// @param productID unique id of product to be added
     /// @dev since index starts from 0, productID-1 was used to index the products array
-    function addToCart(uint productID) external productExists(productID) {
+    function addOneProductToCart(uint productID) external productExists(productID) {
         cart[msg.sender].push(productID);
-        emit LogUserCartUpdated(msg.sender, productID, block.timestamp);
+        uint256[] memory arr = new uint256[](1);
+        arr[0] = productID;
+        emit LogUserCartUpdated(msg.sender, arr, block.timestamp);
     }
 
     /// @return A uint array of product IDs
     function viewCart() external view returns(uint[] memory) {
         return cart[msg.sender];
+    }
+
+    /// @notice Removes entire products from the cart
+    function clearCart() external {
+        delete cart[msg.sender];
     }
 
     /// @notice Adds the ether sent by the buyer to the contract balance
