@@ -106,7 +106,7 @@ contract DECA {
     }
 
     /// @notice Adds the ether sent by the buyer to the contract balance
-    function purchase() external payable {
+    function purchase() public payable {
         require(msg.value == totalAmountToPay(msg.sender), "Amount not enough");
         paid[msg.sender] = true;
         emit LogProductPurchase(msg.sender, cart[msg.sender], block.timestamp);
@@ -137,6 +137,16 @@ contract DECA {
         }
         delete cart[msg.sender];
         emit LogProductDelivery(msg.sender, cart[msg.sender], block.timestamp);
+    }
+
+    /// @notice calls the purchase func when user sends ether to contract
+    receive() external payable {
+        purchase();
+    }
+
+    /// @notice Sends ether back to the user when all function fails
+    fallback() payable external{ 
+        payable(msg.sender).transfer(msg.value);
     }
 
 }
